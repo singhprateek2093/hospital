@@ -1,0 +1,75 @@
+# ============================================================================
+#  Hospital API configuration
+#
+#  Two profiles:
+#    dev      (DEFAULT) -> H2 in-memory DB. Zero setup; data resets on restart.
+#    postgres           -> PostgreSQL. Used by Docker Compose / production-like runs.
+#
+#  Switch with:  SPRING_PROFILES_ACTIVE=postgres  (env var) or --spring.profiles.active
+# ============================================================================
+# Hosting platforms (Render, Railway, etc.) tell the app which port to listen on
+# via the PORT env var. Locally it defaults to 8080.
+server:
+  port: ${PORT:8080}
+
+spring:
+  profiles:
+    active: dev
+  jpa:
+    hibernate:
+      # 'update' auto-creates/updates tables from the @Entity classes.
+      # Great for learning; use migrations (Flyway/Liquibase) for real projects.
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+# Application-specific settings (read via @Value)
+app:
+  jwt:
+    # 32+ char secret for HS256. OVERRIDE in real deployments via JWT_SECRET.
+    secret: ${JWT_SECRET:dev-secret-change-me-please-32-chars-minimum!!}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}   # 24 hours
+  cors:
+    # Comma-separated list of allowed frontend origins (Vite=5173, CRA=3000).
+    allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+---
+# ---------- dev profile: H2 in-memory ----------
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:h2:mem:hospital;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  h2:
+    console:
+      enabled: true       # browse the DB at http://localhost:8080/h2-console
+      path: /h2-console
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+
+---
+# ---------- postgres profile ----------
+# Works two ways:
+#   * Docker Compose sets SPRING_DATASOURCE_URL / _USERNAME / _PASSWORD directly.
+#   * Render injects the DB's host/port/name/user/password as PGHOST/PGPORT/... ;
+#     we build the JDBC URL from those (the nested ${...:default} fallbacks).
+spring:
+  config:
+    activate:
+      on-profile: postgres
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:hospital_db}}
+    username: ${SPRING_DATASOURCE_USERNAME:${PGUSER:hospital}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${PGPASSWORD:hospital}}
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect

@@ -1,0 +1,55 @@
+# ============================================================================
+#  One command to run the whole system:  docker compose up --build
+#
+#    db       -> PostgreSQL 16            (port 5432)
+#    backend  -> Spring Boot API          (port 8080)  [postgres profile]
+#    frontend -> React (Vite dev server)  (port 5173)
+#
+#  Open http://localhost:5173 in the browser.
+# ============================================================================
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: hospital
+      POSTGRES_PASSWORD: hospital
+      POSTGRES_DB: hospital_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # backend waits until Postgres can actually accept connections
+      test: ["CMD-SHELL", "pg_isready -U hospital"]
+      interval: 5s
+      retries: 5
+
+  backend:
+    build: .                 # uses the root Dockerfile (Spring Boot)
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres
+      # Reaches Postgres by the service name "db" on the compose network.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/hospital_db
+      SPRING_DATASOURCE_USERNAME: hospital
+      SPRING_DATASOURCE_PASSWORD: hospital
+      JWT_SECRET: change-me-in-prod-this-is-a-32+char-dev-secret!!
+      # Browser calls the API from http://localhost:5173 — allow that origin.
+      CORS_ORIGINS: http://localhost:5173
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      # Browser (on the host) talks to the API via the published host port.
+      VITE_API_BASE_URL: http://localhost:8080
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
