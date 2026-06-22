@@ -12,8 +12,8 @@
 #    3. Render detects this file and provisions all three. Click Apply.
 #
 #  IMPORTANT — the URLs below assume the service names stay as-is, giving:
-#      backend : https://hospital-api.onrender.com
-#      frontend: https://hospital-ui.onrender.com
+#      backend : https://hospital-api-prateek.onrender.com
+#      frontend: https://hospital-ui-prateek.onrender.com
 #  If Render appends a suffix (name already taken), update the two URL values
 #  marked below to match your actual URLs, then redeploy.
 # ============================================================================
@@ -26,7 +26,7 @@ databases:
 services:
   # ---------- Backend (Spring Boot, Docker) ----------
   - type: web
-    name: hospital-api
+    name: hospital-api-prateek
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile
@@ -52,11 +52,11 @@ services:
       # Allow the frontend origin to call this API (CORS).
       # 👇 update if your frontend URL differs
       - key: CORS_ORIGINS
-        value: https://hospital-ui.onrender.com
+        value: https://hospital-ui-prateek.onrender.com
 
   # ---------- Frontend (React, static site) ----------
   - type: web
-    name: hospital-ui
+    name: hospital-ui-prateek
     runtime: static
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: frontend/dist
@@ -64,7 +64,7 @@ services:
       # Point the UI at the backend's public URL (baked in at build time).
       # 👇 update if your backend URL differs
       - key: VITE_API_BASE_URL
-        value: https://hospital-api.onrender.com
+        value: https://hospital-api-prateek.onrender.com
     routes:
       # Single-page-app fallback: every path serves index.html so React Router works.
       - type: rewrite

@@ -53,3 +53,6 @@ node_modules/
 
 ### Whole IntelliJ folder (keep repo clean for collaborators) ###
 .idea/
+
+### Claude Code local config (may contain machine-specific data) ###
+.claude/
